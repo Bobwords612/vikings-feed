@@ -8,17 +8,18 @@ datasource db {
 }
 
 model Source {
-  id          Int       @id @default(autoincrement())
-  name        String    // "Star Tribune Vikings", "Daily Norseman", etc.
-  url         String    // Website URL
-  feedUrl     String    // RSS feed URL
-  type        String    @default("rss") // rss, twitter, manual
+  id           Int       @id @default(autoincrement())
+  name         String    // "Star Tribune Vikings", "Daily Norseman", etc.
+  url          String    // Website URL
+  feedUrl      String    // RSS feed URL
+  type         String    @default("rss") // rss, twitter, manual
+  tier         String    @default("fan") // official, beat, fan, social
   logoUrl      String?
   allowsIframe Boolean   @default(false)
   isActive     Boolean   @default(true)
-  lastFetched DateTime?
-  createdAt   DateTime  @default(now())
-  articles    Article[]
+  lastFetched  DateTime?
+  createdAt    DateTime  @default(now())
+  articles     Article[]
 
   @@unique([feedUrl])
 }

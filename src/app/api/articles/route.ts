@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     where,
     include: {
       source: {
-        select: { id: true, name: true, url: true, logoUrl: true, allowsIframe: true },
+        select: { id: true, name: true, url: true, tier: true, logoUrl: true, allowsIframe: true },
       },
     },
     orderBy: { publishedAt: 'desc' },
