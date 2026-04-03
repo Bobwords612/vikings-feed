@@ -10,10 +10,24 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "Vikings Feed — Minnesota Vikings News",
   description: "Your home for Minnesota Vikings news from every source",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Vikings Feed",
+  },
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/icon-192.png",
+  },
 };
 
 export const viewport: Viewport = {
   themeColor: "#1a0933",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
