@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Source {
+  id          Int       @id @default(autoincrement())
+  name        String    // "Star Tribune Vikings", "Daily Norseman", etc.
+  url         String    // Website URL
+  feedUrl     String    // RSS feed URL
+  type        String    @default("rss") // rss, twitter, manual
+  logoUrl     String?
+  isActive    Boolean   @default(true)
+  lastFetched DateTime?
+  createdAt   DateTime  @default(now())
+  articles    Article[]
+
+  @@unique([feedUrl])
+}
+
+model Article {
+  id            Int       @id @default(autoincrement())
+  sourceId      Int
+  externalId    String    // GUID from RSS or tweet ID
+  title         String
+  description   String?   @db.Text
+  content       String?   @db.Text
+  url           String    // Original article URL
+  imageUrl      String?
+  author        String?
+  publishedAt   DateTime
+  fetchedAt     DateTime  @default(now())
+  source        Source    @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceId, externalId])
+  @@index([publishedAt(sort: Desc)])
+  @@index([sourceId])
+}
