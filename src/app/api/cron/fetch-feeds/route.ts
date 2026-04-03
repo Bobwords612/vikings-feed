@@ -18,3 +18,15 @@ export async function GET(req: NextRequest) {
     timestamp: new Date().toISOString(),
   });
 }
+
+// POST handler for dev/manual feed triggering (no auth required)
+export async function POST() {
+  const result = await fetchAllFeeds();
+
+  return NextResponse.json({
+    success: true,
+    newArticles: result.total,
+    errors: result.errors,
+    timestamp: new Date().toISOString(),
+  });
+}

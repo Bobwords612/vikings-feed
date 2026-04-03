@@ -23,12 +23,17 @@ interface Article {
 export default function Home() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [cursor, setCursor] = useState<number | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [readerUrl, setReaderUrl] = useState<string | null>(null);
+  const [fetching, setFetching] = useState(false);
+  const [fetchResult, setFetchResult] = useState<string | null>(null);
   const observerRef = useRef<HTMLDivElement>(null);
 
   const fetchArticles = useCallback(async (cursorId?: number) => {
+    if (cursorId) setLoadingMore(true);
+
     const params = new URLSearchParams({ limit: '30' });
     if (cursorId) params.set('cursor', String(cursorId));
 
@@ -39,20 +44,42 @@ export default function Home() {
     setCursor(data.nextCursor);
     setHasMore(!!data.nextCursor);
     setLoading(false);
+    setLoadingMore(false);
   }, []);
 
   useEffect(() => { fetchArticles(); }, [fetchArticles]);
 
-  // Infinite scroll
+  // Infinite scroll with loadingMore guard
   useEffect(() => {
     if (!observerRef.current || !hasMore) return;
     const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting && cursor) fetchArticles(cursor); },
+      (entries) => {
+        if (entries[0].isIntersecting && cursor && !loadingMore) {
+          fetchArticles(cursor);
+        }
+      },
       { threshold: 0.1 }
     );
     observer.observe(observerRef.current);
     return () => observer.disconnect();
-  }, [cursor, hasMore, fetchArticles]);
+  }, [cursor, hasMore, loadingMore, fetchArticles]);
+
+  async function handleFetchFeeds() {
+    setFetching(true);
+    setFetchResult(null);
+    try {
+      const res = await fetch('/api/cron/fetch-feeds', { method: 'POST' });
+      const data = await res.json();
+      setFetchResult(`Fetched ${data.newArticles} new articles`);
+      // Refresh the article list
+      await fetchArticles();
+    } catch {
+      setFetchResult('Failed to fetch feeds');
+    } finally {
+      setFetching(false);
+      setTimeout(() => setFetchResult(null), 3000);
+    }
+  }
 
   function timeAgo(date: string): string {
     const now = Date.now();
@@ -74,7 +101,18 @@ export default function Home() {
             <span className="text-2xl">⚔️</span>
             <h1 className="text-xl font-bold text-purple-300">Vikings Feed</h1>
           </div>
-          <span className="text-xs text-purple-500">SKOL</span>
+          <div className="flex items-center gap-3">
+            {fetchResult && (
+              <span className="text-xs text-purple-400">{fetchResult}</span>
+            )}
+            <button
+              onClick={handleFetchFeeds}
+              disabled={fetching}
+              className="text-xs px-3 py-1.5 rounded-full bg-purple-800/50 text-purple-300 hover:bg-purple-700/50 disabled:opacity-50 transition-colors"
+            >
+              {fetching ? 'Fetching...' : 'Fetch Feeds'}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -86,7 +124,14 @@ export default function Home() {
           <div className="text-center py-20">
             <div className="text-4xl mb-4">📰</div>
             <p className="text-purple-300 text-lg font-medium">No articles yet</p>
-            <p className="text-purple-500 text-sm mt-1">Run the feed fetcher to populate</p>
+            <p className="text-purple-500 text-sm mt-1 mb-4">Fetch feeds to populate your stream</p>
+            <button
+              onClick={handleFetchFeeds}
+              disabled={fetching}
+              className="px-6 py-2 rounded-full bg-purple-700 text-white hover:bg-purple-600 disabled:opacity-50 transition-colors"
+            >
+              {fetching ? 'Fetching...' : 'Fetch Feeds Now'}
+            </button>
           </div>
         ) : (
           <div className="space-y-4">
@@ -94,7 +139,7 @@ export default function Home() {
               <button
                 key={article.id}
                 onClick={() => setReaderUrl(article.url)}
-                className="w-full text-left bg-purple-950/30 border border-purple-900/40 rounded-xl overflow-hidden hover:bg-purple-950/50 hover:border-purple-700/50 transition-all"
+                className="w-full text-left bg-purple-950/30 border border-purple-900/40 rounded-xl overflow-hidden hover:bg-purple-950/50 hover:border-purple-700/50 transition-all active:scale-[0.99]"
               >
                 <div className="flex gap-4 p-4">
                   {/* Thumbnail */}
@@ -139,9 +184,11 @@ export default function Home() {
             {/* Infinite scroll sentinel */}
             <div ref={observerRef} className="py-8 text-center">
               {hasMore ? (
-                <div className="text-purple-500 text-sm">Loading more...</div>
+                <div className="text-purple-500 text-sm">
+                  {loadingMore ? 'Loading more...' : ''}
+                </div>
               ) : (
-                <div className="text-purple-700 text-sm">You're all caught up ⚔️</div>
+                <div className="text-purple-700 text-sm">You're all caught up</div>
               )}
             </div>
           </div>
