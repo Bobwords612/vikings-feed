@@ -101,9 +101,10 @@ export default function ArticleCard({
             {article.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={article.imageUrl}
+                src={`/api/image-proxy?url=${encodeURIComponent(article.imageUrl)}`}
                 alt=""
                 className="w-full h-full object-cover"
+                loading="lazy"
                 onError={(e) => {
                   const el = e.target as HTMLImageElement;
                   el.style.display = 'none';
