@@ -14,6 +14,7 @@ model Source {
   feedUrl      String    // RSS feed URL
   type         String    @default("rss") // rss, twitter, manual
   tier         String    @default("fan") // official, beat, fan, social
+  keywordFilter String?  // If set, only keep articles matching this keyword (for broad feeds)
   logoUrl      String?
   allowsIframe Boolean   @default(false)
   isActive     Boolean   @default(true)

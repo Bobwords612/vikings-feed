@@ -28,7 +28,7 @@ export async function fetchAllFeeds(): Promise<{ total: number; errors: string[]
 
   for (const source of sources) {
     try {
-      const count = await fetchFeed(source.id, source.feedUrl);
+      const count = await fetchFeed(source.id, source.feedUrl, source.keywordFilter);
       total += count;
 
       await prisma.source.update({
@@ -45,13 +45,19 @@ export async function fetchAllFeeds(): Promise<{ total: number; errors: string[]
   return { total, errors };
 }
 
-async function fetchFeed(sourceId: number, feedUrl: string): Promise<number> {
+async function fetchFeed(sourceId: number, feedUrl: string, keywordFilter: string | null): Promise<number> {
   const feed = await parser.parseURL(feedUrl);
   let added = 0;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const item of feed.items as any[]) {
     if (!item.title || !item.link) continue;
+
+    // Apply keyword filter if source requires it (e.g., broad sports feeds)
+    if (keywordFilter) {
+      const text = `${item.title} ${item.contentSnippet || item.content || ''} ${item.link}`.toLowerCase();
+      if (!text.includes(keywordFilter.toLowerCase())) continue;
+    }
 
     const externalId = item.guid || item.link;
     const publishedAt = item.pubDate ? new Date(item.pubDate) : new Date();
